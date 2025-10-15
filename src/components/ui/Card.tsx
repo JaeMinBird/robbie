@@ -2,12 +2,13 @@
 
 import { cn } from '@/lib/utils';
 import { motion, MotionProps } from 'framer-motion';
-import { HTMLAttributes, ReactNode } from 'react';
+import { HTMLAttributes, ReactNode, CSSProperties } from 'react';
 
 interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, keyof MotionProps> {
   glass?: boolean;
   hover?: boolean;
   children?: ReactNode;
+  style?: CSSProperties;
 }
 
 export function Card({ className, glass = true, hover = true, children, ...props }: CardProps) {
