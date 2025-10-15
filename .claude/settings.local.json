@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install framer-motion ai @google/generative-ai pdf-parse clsx class-variance-authority lucide-react)",
+      "Bash(npm install -D @types/pdf-parse)",
+      "Bash(npm run dev)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
