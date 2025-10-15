@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { JobRequirements, ScoringWeights, Candidate } from '@/types';
+import { JobRequirements, ScoringWeights, Candidate, CustomCriteriaMatch, DimensionScore, SkillMatch } from '@/types';
 import {
   calculateSkillsScore,
   calculateLocationScore,
@@ -9,6 +9,21 @@ import {
 } from './scoring';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+interface ParsedJob {
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface JobWithDuration {
+  startDate: string;
+  endDate: string;
+  duration: number;
+  company: string;
+  position: string;
+}
 
 // Extract key traits from job description
 export async function extractJobTraits(jobDescription: string): Promise<string[]> {
@@ -141,7 +156,7 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
       confidence: (parsed.location.current ? 'high' : 'medium') as 'high' | 'medium' | 'low'
     };
 
-    const jobs = parsed.jobs.map((job: any) => {
+    const jobs = parsed.jobs.map((job: ParsedJob) => {
       const duration = calculateJobDuration(job.startDate, job.endDate);
       return {
         company: job.company,
@@ -155,7 +170,7 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
     const totalExperience = parsed.totalYears || calculateTotalExperience(jobs);
     const gaps = detectGaps(jobs);
     const averageJobDuration = jobs.length > 0
-      ? jobs.reduce((sum: number, job: any) => sum + job.duration, 0) / jobs.length
+      ? jobs.reduce((sum: number, job: JobWithDuration) => sum + job.duration, 0) / jobs.length
       : 0;
 
     const timeline = {
@@ -172,13 +187,13 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
     };
 
     // Calculate scores
-    let skillsScore = calculateSkillsScore(skillMatches, jobRequirements.requiredSkills);
-    let locationScore = calculateLocationScore(locationData, jobRequirements.location);
+    const skillsScore = calculateSkillsScore(skillMatches, jobRequirements.requiredSkills);
+    const locationScore = calculateLocationScore(locationData, jobRequirements.location);
     const experienceScore = calculateExperienceScore(totalExperience, jobRequirements.minimumExperience, experienceLevel.careerTrajectory);
     const stabilityScore = calculateStabilityScore(averageJobDuration, gaps);
 
     // Handle custom criteria match
-    let customCriteriaMatch: any = undefined;
+    let customCriteriaMatch: CustomCriteriaMatch | undefined = undefined;
     let customBonus = 0;
     
     if (jobRequirements.customPrompt && parsed.customCriteriaMatch) {
@@ -247,15 +262,15 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
 }
 
 function generateHighlights(
-  skillsScore: any,
-  locationScore: any,
-  experienceScore: any,
-  stabilityScore: any,
-  customCriteriaMatch: any,
-  skillMatches: any[],
+  skillsScore: DimensionScore,
+  locationScore: DimensionScore,
+  experienceScore: DimensionScore,
+  stabilityScore: DimensionScore,
+  customCriteriaMatch: CustomCriteriaMatch | undefined,
+  skillMatches: SkillMatch[],
   jobRequirements: JobRequirements,
   averageJobDuration: number,
-  gaps: any[]
+  gaps: { duration: number }[]
 ): { positive: string[]; negative: string[] } {
   const positive: string[] = [];
   const negative: string[] = [];
@@ -322,12 +337,12 @@ function calculateJobDuration(startDate: string, endDate: string): number {
   }
 }
 
-function calculateTotalExperience(jobs: any[]): number {
+function calculateTotalExperience(jobs: JobWithDuration[]): number {
   const totalMonths = jobs.reduce((sum, job) => sum + job.duration, 0);
   return Math.round(totalMonths / 12 * 10) / 10;
 }
 
-function detectGaps(jobs: any[]): { startDate: string; endDate: string; duration: number }[] {
+function detectGaps(jobs: JobWithDuration[]): { startDate: string; endDate: string; duration: number }[] {
   if (jobs.length < 2) return [];
 
   const sortedJobs = [...jobs].sort((a, b) =>
@@ -354,7 +369,7 @@ function detectGaps(jobs: any[]): { startDate: string; endDate: string; duration
   return gaps;
 }
 
-function determineTrajectory(jobs: any[]): string {
+function determineTrajectory(jobs: JobWithDuration[]): string {
   if (jobs.length < 2) return 'stable';
 
   const sortedJobs = [...jobs].sort((a, b) =>

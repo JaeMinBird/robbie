@@ -25,7 +25,7 @@ export function calculateDuration(startDate: string, endDate: string): number {
   return Math.max(0, months);
 }
 
-export function exportToCSV(data: any[]): string {
+export function exportToCSV(data: Record<string, unknown>[]): string {
   if (data.length === 0) return '';
 
   const headers = Object.keys(data[0]);

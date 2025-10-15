@@ -60,7 +60,7 @@ export interface ExperienceLevel {
 export interface DimensionScore {
   score: number; // 0-100
   reasoning: string;
-  details: any;
+  details: Record<string, unknown>;
 }
 
 export interface CustomCriteriaMatch {

@@ -1,5 +1,4 @@
 import {
-  JobRequirements,
   ScoringWeights,
   Candidate,
   DimensionScore,
@@ -163,8 +162,8 @@ export function calculateStabilityScore(
   gaps: { duration: number }[]
 ): DimensionScore {
   let score = 100;
-  let flags: string[] = [];
-  let positives: string[] = [];
+  const flags: string[] = [];
+  const positives: string[] = [];
 
   // Job hopping analysis
   if (averageJobDuration < 12) {

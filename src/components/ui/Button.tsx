@@ -1,10 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, MotionProps } from 'framer-motion';
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
@@ -12,7 +12,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center rounded-xl font-medium transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+    const baseStyles = 'inline-flex items-center justify-center rounded-xl font-medium transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
 
     const variants = {
       primary: 'bg-black text-white hover:bg-neutral-800 focus-visible:ring-black dark:bg-white dark:text-black dark:hover:bg-neutral-200',
@@ -34,7 +34,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileTap={{ scale: disabled || loading ? 1 : 0.98 }}
         className={cn(baseStyles, variants[variant], sizes[size], className)}
         disabled={disabled || loading}
-        {...props}
+        {...(props as MotionProps)}
       >
         {loading ? (
           <div className="flex items-center gap-2">

@@ -10,6 +10,19 @@ import {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
+interface ParsedJob {
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface JobWithDuration {
+  startDate: string;
+  endDate: string;
+  duration: number;
+}
+
 export async function analyzeResume(
   resumeText: string,
   jobRequirements: JobRequirements,
@@ -86,7 +99,7 @@ Return JSON in this exact format:
     };
 
     // Process employment timeline
-    const jobs = parsed.jobs.map((job: any) => {
+    const jobs = parsed.jobs.map((job: ParsedJob) => {
       const startDate = job.startDate;
       const endDate = job.endDate;
       const duration = calculateJobDuration(startDate, endDate);
@@ -103,7 +116,7 @@ Return JSON in this exact format:
     const totalExperience = parsed.totalYears || calculateTotalExperience(jobs);
     const gaps = detectGaps(jobs);
     const averageJobDuration = jobs.length > 0
-      ? jobs.reduce((sum: number, job: any) => sum + job.duration, 0) / jobs.length
+      ? jobs.reduce((sum: number, job: JobWithDuration) => sum + job.duration, 0) / jobs.length
       : 0;
 
     const timeline: EmploymentTimeline = {
@@ -165,12 +178,12 @@ function calculateJobDuration(startDate: string, endDate: string): number {
   }
 }
 
-function calculateTotalExperience(jobs: any[]): number {
+function calculateTotalExperience(jobs: JobWithDuration[]): number {
   const totalMonths = jobs.reduce((sum, job) => sum + job.duration, 0);
   return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal
 }
 
-function detectGaps(jobs: any[]): { startDate: string; endDate: string; duration: number }[] {
+function detectGaps(jobs: JobWithDuration[]): { startDate: string; endDate: string; duration: number }[] {
   if (jobs.length < 2) return [];
 
   const sortedJobs = [...jobs].sort((a, b) =>
@@ -197,7 +210,7 @@ function detectGaps(jobs: any[]): { startDate: string; endDate: string; duration
   return gaps;
 }
 
-function determineTrajectory(jobs: any[]): 'ascending' | 'stable' | 'descending' {
+function determineTrajectory(jobs: JobWithDuration[]): 'ascending' | 'stable' | 'descending' {
   if (jobs.length < 2) return 'stable';
 
   const sortedJobs = [...jobs].sort((a, b) =>
