@@ -200,7 +200,7 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
       customCriteriaMatch = parsed.customCriteriaMatch;
       
       // Apply significant boost based on match level
-      if (customCriteriaMatch.matched) {
+      if (customCriteriaMatch && customCriteriaMatch.matched) {
         if (customCriteriaMatch.matchLevel === 'strong') {
           customBonus = 20; // Strong match gives major boost
         } else if (customCriteriaMatch.matchLevel === 'partial') {
@@ -276,21 +276,23 @@ function generateHighlights(
   const negative: string[] = [];
 
   // Custom criteria (highest priority)
-  if (customCriteriaMatch?.matched) {
-    if (customCriteriaMatch.matchLevel === 'strong') {
-      positive.push(customCriteriaMatch.explanation);
-    } else if (customCriteriaMatch.matchLevel === 'partial') {
-      positive.push(`Partially matches: ${customCriteriaMatch.explanation}`);
+  if (customCriteriaMatch) {
+    if (customCriteriaMatch.matched) {
+      if (customCriteriaMatch.matchLevel === 'strong') {
+        positive.push(customCriteriaMatch.explanation);
+      } else if (customCriteriaMatch.matchLevel === 'partial') {
+        positive.push(`Partially matches: ${customCriteriaMatch.explanation}`);
+      }
+    } else {
+      negative.push(customCriteriaMatch.explanation);
     }
-  } else if (customCriteriaMatch && !customCriteriaMatch.matched) {
-    negative.push(customCriteriaMatch.explanation);
   }
 
   // Skills highlights
   if (skillsScore.score >= 80) {
     const matchedCount = skillMatches.filter(s => s.matched).length;
     positive.push(`Strong skill match (${matchedCount}/${jobRequirements.requiredSkills.length} required skills)`);
-  } else if (skillsScore.score < 50 && skillsScore.details.missing?.length > 0) {
+  } else if (skillsScore.score < 50 && Array.isArray(skillsScore.details.missing) && skillsScore.details.missing.length > 0) {
     negative.push(`Missing key skills: ${skillsScore.details.missing.slice(0, 2).join(', ')}`);
   }
 
@@ -302,9 +304,9 @@ function generateHighlights(
   }
 
   // Experience highlights
-  if (experienceScore.score >= 85) {
+  if (experienceScore.score >= 85 && typeof experienceScore.details.candidateYears === 'number') {
     positive.push(`${experienceScore.details.candidateYears}+ years of relevant experience`);
-  } else if (experienceScore.score < 60) {
+  } else if (experienceScore.score < 60 && typeof experienceScore.details.candidateYears === 'number') {
     negative.push(`Limited experience (${experienceScore.details.candidateYears} years)`);
   }
 
