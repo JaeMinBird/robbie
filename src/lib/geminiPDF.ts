@@ -72,6 +72,7 @@ Extract the following information:
 4. Complete employment history with company names, positions, start dates, end dates
 5. Education
 6. Years of experience
+7. ${customCriteria ? 'IMPORTANT: Evaluate how well this candidate matches the custom criteria. If they match a specific requirement (like school alumni, specific certification, etc.), provide a strong match rating.' : ''}
 
 Return ONLY valid JSON without any markdown formatting or code blocks:
 {
@@ -95,7 +96,11 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
   ],
   "education": ["degree/institution"],
   "totalYears": number,
-  "customCriteriaMatch": "brief explanation of how candidate matches custom criteria (if provided)"
+  "customCriteriaMatch": {
+    "matched": boolean,
+    "explanation": "string - detailed explanation of match/non-match",
+    "matchLevel": "strong|partial|weak"
+  }
 }`;
 
   try {
@@ -172,15 +177,23 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
     const experienceScore = calculateExperienceScore(totalExperience, jobRequirements.minimumExperience, experienceLevel.careerTrajectory);
     const stabilityScore = calculateStabilityScore(averageJobDuration, gaps);
 
-    // Apply custom criteria boost if provided
+    // Handle custom criteria match
+    let customCriteriaMatch: any = undefined;
+    let customBonus = 0;
+    
     if (jobRequirements.customPrompt && parsed.customCriteriaMatch) {
-      // Add bonus points if custom criteria is well-matched
-      const customBonus = 5;
-      skillsScore = {
-        ...skillsScore,
-        score: Math.min(100, skillsScore.score + customBonus),
-        reasoning: `${skillsScore.reasoning} Custom criteria: ${parsed.customCriteriaMatch}`
-      };
+      customCriteriaMatch = parsed.customCriteriaMatch;
+      
+      // Apply significant boost based on match level
+      if (customCriteriaMatch.matched) {
+        if (customCriteriaMatch.matchLevel === 'strong') {
+          customBonus = 20; // Strong match gives major boost
+        } else if (customCriteriaMatch.matchLevel === 'partial') {
+          customBonus = 10;
+        } else {
+          customBonus = 5;
+        }
+      }
     }
 
     const scores = {
@@ -191,7 +204,28 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
       overall: 0
     };
 
-    scores.overall = calculateOverallScore(scores, weights);
+    // Calculate base overall score
+    let overallScore = calculateOverallScore(scores, weights);
+    
+    // Apply custom criteria bonus to overall score
+    if (customBonus > 0) {
+      overallScore = Math.min(100, overallScore + customBonus);
+    }
+    
+    scores.overall = overallScore;
+
+    // Generate highlights
+    const highlights = generateHighlights(
+      skillsScore,
+      locationScore,
+      experienceScore,
+      stabilityScore,
+      customCriteriaMatch,
+      skillMatches,
+      jobRequirements,
+      averageJobDuration,
+      gaps
+    );
 
     return {
       name: parsed.name,
@@ -202,12 +236,79 @@ Return ONLY valid JSON without any markdown formatting or code blocks:
       timeline,
       experienceLevel,
       education: parsed.education,
-      scores
+      scores,
+      customCriteriaMatch,
+      highlights
     };
   } catch (error) {
     console.error('Error analyzing resume from PDF:', error);
     throw new Error(`Failed to analyze resume: ${fileName}`);
   }
+}
+
+function generateHighlights(
+  skillsScore: any,
+  locationScore: any,
+  experienceScore: any,
+  stabilityScore: any,
+  customCriteriaMatch: any,
+  skillMatches: any[],
+  jobRequirements: JobRequirements,
+  averageJobDuration: number,
+  gaps: any[]
+): { positive: string[]; negative: string[] } {
+  const positive: string[] = [];
+  const negative: string[] = [];
+
+  // Custom criteria (highest priority)
+  if (customCriteriaMatch?.matched) {
+    if (customCriteriaMatch.matchLevel === 'strong') {
+      positive.push(customCriteriaMatch.explanation);
+    } else if (customCriteriaMatch.matchLevel === 'partial') {
+      positive.push(`Partially matches: ${customCriteriaMatch.explanation}`);
+    }
+  } else if (customCriteriaMatch && !customCriteriaMatch.matched) {
+    negative.push(customCriteriaMatch.explanation);
+  }
+
+  // Skills highlights
+  if (skillsScore.score >= 80) {
+    const matchedCount = skillMatches.filter(s => s.matched).length;
+    positive.push(`Strong skill match (${matchedCount}/${jobRequirements.requiredSkills.length} required skills)`);
+  } else if (skillsScore.score < 50 && skillsScore.details.missing?.length > 0) {
+    negative.push(`Missing key skills: ${skillsScore.details.missing.slice(0, 2).join(', ')}`);
+  }
+
+  // Location highlights
+  if (locationScore.score >= 90) {
+    positive.push('Located in target area');
+  } else if (locationScore.score < 50) {
+    negative.push('Location mismatch - may require relocation');
+  }
+
+  // Experience highlights
+  if (experienceScore.score >= 85) {
+    positive.push(`${experienceScore.details.candidateYears}+ years of relevant experience`);
+  } else if (experienceScore.score < 60) {
+    negative.push(`Limited experience (${experienceScore.details.candidateYears} years)`);
+  }
+
+  // Stability highlights
+  if (stabilityScore.score >= 80 && averageJobDuration >= 36) {
+    positive.push('Excellent job stability');
+  } else if (averageJobDuration < 18) {
+    negative.push('Short average tenure at previous roles');
+  }
+
+  if (gaps.length > 1) {
+    negative.push(`${gaps.length} employment gaps`);
+  }
+
+  // Limit to top 3 of each
+  return {
+    positive: positive.slice(0, 3),
+    negative: negative.slice(0, 3)
+  };
 }
 
 function calculateJobDuration(startDate: string, endDate: string): number {

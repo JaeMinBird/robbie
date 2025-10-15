@@ -6,7 +6,7 @@ export const TIER_CONFIGS: TierConfig[] = [
     label: 'Tier 1',
     range: [80, 100],
     color: '#10B981', // Green
-    bgColor: 'rgba(16, 185, 129, 0.1)',
+    bgColor: 'transparent',
     borderColor: 'rgba(16, 185, 129, 0.3)'
   },
   {
@@ -14,7 +14,7 @@ export const TIER_CONFIGS: TierConfig[] = [
     label: 'Tier 2',
     range: [60, 79],
     color: '#F59E0B', // Yellow/Amber
-    bgColor: 'rgba(245, 158, 11, 0.1)',
+    bgColor: 'transparent',
     borderColor: 'rgba(245, 158, 11, 0.3)'
   },
   {
@@ -22,7 +22,7 @@ export const TIER_CONFIGS: TierConfig[] = [
     label: 'Tier 3',
     range: [0, 59],
     color: '#EF4444', // Red
-    bgColor: 'rgba(239, 68, 68, 0.1)',
+    bgColor: 'transparent',
     borderColor: 'rgba(239, 68, 68, 0.3)'
   }
 ];

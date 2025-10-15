@@ -33,7 +33,7 @@ export function CandidateCard({ candidate, tier }: CandidateCardProps) {
     >
       {/* Header - Always Visible */}
       <div
-        className="p-6 cursor-pointer"
+        className="p-6 cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-start justify-between gap-4">
@@ -43,11 +43,10 @@ export function CandidateCard({ candidate, tier }: CandidateCardProps) {
                 {candidate.name}
               </h3>
               <span
-                className="px-3 py-1 rounded-full text-xs font-semibold"
+                className="px-3 py-1 rounded-full text-xs font-semibold border"
                 style={{
-                  backgroundColor: tierConfig.bgColor,
                   color: tierConfig.color,
-                  border: `1px solid ${tierConfig.borderColor}`
+                  borderColor: tierConfig.borderColor
                 }}
               >
                 {tierConfig.label}
@@ -79,11 +78,10 @@ export function CandidateCard({ candidate, tier }: CandidateCardProps) {
           {/* Overall Score */}
           <div className="flex flex-col items-center gap-1">
             <div
-              className="w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl"
+              className="w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl border-2"
               style={{
-                backgroundColor: tierConfig.bgColor,
                 color: tierConfig.color,
-                border: `2px solid ${tierConfig.borderColor}`
+                borderColor: tierConfig.borderColor
               }}
             >
               {candidate.scores.overall}
@@ -99,6 +97,32 @@ export function CandidateCard({ candidate, tier }: CandidateCardProps) {
             <ChevronDown className="w-6 h-6 text-neutral-400" />
           </motion.div>
         </div>
+
+        {/* Highlights */}
+        {candidate.highlights && (candidate.highlights.positive.length > 0 || candidate.highlights.negative.length > 0) && (
+          <div className="mt-4 space-y-2">
+            {candidate.highlights.positive.length > 0 && (
+              <div className="space-y-1">
+                {candidate.highlights.positive.map((highlight, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-sm text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{highlight}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {candidate.highlights.negative.length > 0 && (
+              <div className="space-y-1">
+                {candidate.highlights.negative.map((highlight, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{highlight}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Score Breakdown */}
         <div className="grid grid-cols-4 gap-4 mt-6">

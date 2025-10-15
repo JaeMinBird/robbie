@@ -63,6 +63,12 @@ export interface DimensionScore {
   details: any;
 }
 
+export interface CustomCriteriaMatch {
+  matched: boolean;
+  explanation: string;
+  matchLevel: 'strong' | 'partial' | 'weak';
+}
+
 export interface CandidateScores {
   skills: DimensionScore;
   location: DimensionScore;
@@ -86,6 +92,15 @@ export interface Candidate {
 
   // Scoring
   scores: CandidateScores;
+  
+  // Custom criteria
+  customCriteriaMatch?: CustomCriteriaMatch;
+  
+  // Highlights
+  highlights?: {
+    positive: string[];
+    negative: string[];
+  };
 
   // Metadata
   resumeText?: string;
