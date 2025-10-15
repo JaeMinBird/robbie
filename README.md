@@ -247,5 +247,3 @@ MIT License - see LICENSE file for details
 For issues, questions, or contributions, please open an issue on GitHub.
 
 ---
-
-**Made with AI by Claude Code**
